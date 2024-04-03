@@ -242,6 +242,10 @@ class Enemy(TurtleGameElement):
                 (self.y - self.size / 2 < self.game.player.y < self.y + self.size / 2)
         )
 
+    def hit_wall(self) -> bool:
+        return self.x < 10 or self.x > 790 or self.y < 10 or self.y > 490
+
+
 
 # TODO
 
@@ -273,13 +277,18 @@ class RandomWalkEnemy(Enemy):
         self.time += 1
 
         if self.time % 30 == 0:
-            self.update_x = random.randint(-1, 2)
-            self.update_y = random.randint(-1, 2)
+            self.update_x = random.randint(-3, 3)
+            self.update_y = random.randint(-3, 3)
 
         self.x += self.update_x
         self.y += self.update_y
         if self.hits_player():
             self.game.game_over_lose()
+
+        if self.hit_wall():
+            self.time = 0
+            self.update_x *= -1
+            self.update_y *= -1
 
     def render(self) -> None:
         self.canvas.coords(self.__id,
@@ -290,7 +299,7 @@ class RandomWalkEnemy(Enemy):
                            )
 
     def delete(self) -> None:
-        pass
+        self.canvas.delete(self.__id)
 
 
 class DemoEnemy(Enemy):
