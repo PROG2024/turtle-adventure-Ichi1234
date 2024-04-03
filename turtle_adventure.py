@@ -246,7 +246,6 @@ class Enemy(TurtleGameElement):
         return self.x < 10 or self.x > 790 or self.y < 10 or self.y > 490
 
 
-
 # TODO
 
 # * Define your enemy classes
@@ -259,7 +258,6 @@ class RandomWalkEnemy(Enemy):
     """
     Random walking enemy
     """
-
     def __init__(self,
                  game: "TurtleAdventureGame",
                  size: int,
@@ -271,7 +269,7 @@ class RandomWalkEnemy(Enemy):
         self.update_y = random.randint(-1, 1)
 
     def create(self) -> None:
-        self.__id = self.canvas.create_oval(0, 0, 0, 0, fill="blue")
+        self.__id = self.canvas.create_oval(0, 0, 0, 0, fill="blue", outline="black")
 
     def update(self) -> None:
         self.time += 1
@@ -282,6 +280,58 @@ class RandomWalkEnemy(Enemy):
 
         self.x += self.update_x
         self.y += self.update_y
+        if self.hits_player():
+            self.game.game_over_lose()
+
+        if self.hit_wall():
+            self.time = 0
+            self.update_x *= -1
+            self.update_y *= -1
+
+    def render(self) -> None:
+        self.canvas.coords(self.__id,
+                           self.x - self.size / 2,
+                           self.y - self.size / 2,
+                           self.x + self.size / 2,
+                           self.y + self.size / 2,
+                           )
+
+    def delete(self) -> None:
+        self.canvas.delete(self.__id)
+
+
+class ChasingEnemy(Enemy):
+    """
+    Chasing enemy
+    """
+    def __init__(self,
+                 game: "TurtleAdventureGame",
+                 size: int,
+                 color: str):
+        super().__init__(game, size, color)
+        self.__id = None
+        self.time = 0
+        self.update_x = random.randint(-1, 1)
+        self.update_y = random.randint(-1, 1)
+
+    def create(self) -> None:
+        self.__id = self.canvas.create_rectangle(0, 0, 0, 0, outline="black", fill="red", width=2)
+
+    def update(self) -> None:
+        player_x = self.game.player.x
+        player_y = self.game.player.y
+        direction = [player_x - self.x, player_y - self.y]
+
+        if direction[0] > 0:
+            self.x += 3
+        else:
+            self.x -= 3
+
+        if direction[1] > 0:
+            self.y += 3
+        else:
+            self.y -= 3
+
         if self.hits_player():
             self.game.game_over_lose()
 
@@ -375,12 +425,12 @@ class EnemyGenerator:
         Create a new enemy, possibly based on the game level
         """
 
-        new_enemy = DemoEnemy(self.__game, 20, "red")
+        new_enemy = ChasingEnemy(self.__game, 20, "red")
         new_enemy.x = 100
         new_enemy.y = 100
         self.game.add_element(new_enemy)
 
-        random_walk = RandomWalkEnemy(self.__game, 10, "blue")
+        random_walk = RandomWalkEnemy(self.__game, 15, "blue")
         random_walk.x = 400
         random_walk.y = 250
 
