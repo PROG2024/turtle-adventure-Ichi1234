@@ -382,25 +382,18 @@ class FencingEnemy(Enemy):
 
     def update(self) -> None:
 
-        # set border for my enemy
+        # left border
         if self.x < self.game.home.x - 50:
-            self.x = self.game.home.x - 50
-            self.x_speed = 0
-            self.y_speed = 3
-
+            self.x, self.x_speed, self.y_speed = self.game.home.x - 50, 0, 3
+        # right border
         elif self.x > self.game.home.x + 50:
-            self.x = self.game.home.x + 50
-            self.x_speed = 0
-            self.y_speed = -3
-
-        if self.y < self.game.home.y - 50:
-            self.y = self.game.home.y - 50
-            self.x_speed = -3
-            self.y_speed = 0
+            self.x, self.x_speed, self.y_speed = self.game.home.x + 50, 0, -3
+        # top border
+        elif self.y < self.game.home.y - 50:
+            self.y, self.x_speed, self.y_speed = self.game.home.y - 50, -3, 0
+        # bottom border
         elif self.y > self.game.home.y + 50:
-            self.y = self.game.home.y + 50
-            self.x_speed = 3
-            self.y_speed = 0
+            self.y, self.x_speed, self.y_speed = self.game.home.y + 50, 3, 0
 
         # enemy walking
         self.x += self.x_speed
