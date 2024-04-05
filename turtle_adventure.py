@@ -340,7 +340,7 @@ class ChasingEnemy(Enemy):
 
         if direction[1] > 0:
             self.y += 3
-        else:
+        elif direction[1] < 0:
             self.y -= 3
 
         if self.hits_player():
@@ -398,6 +398,67 @@ class FencingEnemy(Enemy):
         # enemy walking
         self.x += self.x_speed
         self.y += self.y_speed
+
+        if self.hits_player():
+            self.game.game_over_lose()
+
+    def render(self) -> None:
+        self.canvas.coords(self.__id,
+                           self.x - self.size / 2,
+                           self.y - self.size / 2,
+                           self.x + self.size / 2,
+                           self.y + self.size / 2,
+                           )
+
+    def delete(self) -> None:
+        pass
+
+
+class StalkerEnemy(Enemy):
+    """
+    You can run, but you can't hide~~
+    Every 10 second. This enemy will teleport to in front of the player then run toward to player.
+    """
+
+    def __init__(self,
+                 game: "TurtleAdventureGame",
+                 size: int,
+                 color: str):
+        super().__init__(game, size, color)
+        self.__id = None
+        self.time = 0
+        self.speed = 2
+        self.teleport = 150
+
+    def create(self) -> None:
+        self.__id = self.canvas.create_rectangle(0, 0, 0, 0, outline="black", fill="purple", width=2)
+
+    def update(self) -> None:
+
+        if self.game.waypoint.x - self.game.player.x > 0:
+            self.teleport = 100
+        else:
+            self.teleport = -85
+
+        if self.time % 40 == 0:
+            self.x = self.game.player.x + self.teleport
+            self.y = self.game.player.y
+        self.time += 1
+
+        direction = [self.game.player.x - self.x, self.game.player.y - self.y]
+
+        if direction[0] > 0 > self.speed:
+            self.speed *= -1
+
+        if direction[0] < 0 < self.speed:
+            self.speed *= -1
+
+        self.x += self.speed
+
+        if direction[1] > 0:
+            self.y += 2
+        elif direction[1] < 0:
+            self.y -= 2
 
         if self.hits_player():
             self.game.game_over_lose()
@@ -501,6 +562,11 @@ class EnemyGenerator:
         square_walk.x = self.game.home.x
         square_walk.y = self.game.home.y - 20
         self.game.add_element(square_walk)
+
+        teleporter = StalkerEnemy(self.__game, 20, "purple")
+        teleporter.x = 650
+        teleporter.y = 200
+        self.game.add_element(teleporter)
 
 
 class TurtleAdventureGame(Game):  # pylint: disable=too-many-ancestors
