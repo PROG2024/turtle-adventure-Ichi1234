@@ -270,7 +270,7 @@ class RandomWalkEnemy(Enemy):
         self.update_y = random.randint(-1, 1)
 
     def create(self) -> None:
-        self.__id = self.canvas.create_oval(0, 0, 0, 0, fill="blue", outline="black")
+        self.__id = self.canvas.create_oval(0, 0, 0, 0, fill=self.color, outline="black")
 
     def update(self) -> None:
         self.time += 1
@@ -547,26 +547,34 @@ class EnemyGenerator:
         """
         Create a new enemy, possibly based on the game level
         """
+        color = ["#0B2447", "#19376D", "#576CBC", "#1C6758"]
+        chaser_1 = ChasingEnemy(self.__game, 20, "red")
+        chaser_1.x = 200
+        chaser_1.y = 100
+        self.game.add_enemy(chaser_1)
 
-        new_enemy = ChasingEnemy(self.__game, 20, "red")
-        new_enemy.x = 100
-        new_enemy.y = 100
-        self.game.add_element(new_enemy)
+        chaser_2 = ChasingEnemy(self.__game, 20, "red")
+        chaser_2.x = 400
+        chaser_2.y = 400
+        self.game.add_enemy(chaser_2)
 
-        random_walk = RandomWalkEnemy(self.__game, 15, "blue")
-        random_walk.x = 400
-        random_walk.y = 250
-        self.game.add_element(random_walk)
+        for _ in range(20):
+            random_walk = RandomWalkEnemy(self.__game, random.randint(15, 20), random.choice(color))
+            random_walk.x = random.randint(90, 600)
+            random_walk.y = random.randint(0, 500)
+            self.game.add_enemy(random_walk)
 
-        square_walk = FencingEnemy(self.__game, 20, "blue")
-        square_walk.x = self.game.home.x
-        square_walk.y = self.game.home.y - 20
-        self.game.add_element(square_walk)
+        shield_locate = [(-50, -50), (-50, 50), (50, -50), (50, 52)]
+        for i in range(4):
+            square_walk = FencingEnemy(self.__game, 20, "blue")
+            square_walk.x = self.game.home.x + shield_locate[i][0]
+            square_walk.y = self.game.home.y + shield_locate[i][1]
+            self.game.add_enemy(square_walk)
 
         teleporter = StalkerEnemy(self.__game, 20, "purple")
         teleporter.x = 650
         teleporter.y = 200
-        self.game.add_element(teleporter)
+        self.game.add_enemy(teleporter)
 
 
 class TurtleAdventureGame(Game):  # pylint: disable=too-many-ancestors
