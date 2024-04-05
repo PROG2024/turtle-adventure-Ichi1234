@@ -311,6 +311,7 @@ class ChasingEnemy(Enemy):
         super().__init__(game, size, color)
         self.__id = None
         self.time = 0
+        self.speed = 0
         self.update_x = random.randint(-1, 1)
         self.update_y = random.randint(-1, 1)
 
@@ -322,10 +323,18 @@ class ChasingEnemy(Enemy):
         player_y = self.game.player.y
         direction = [player_x - self.x, player_y - self.y]
 
-        if direction[0] > 0:
-            self.x += 3
+        if direction[0] > 100 or direction[0] < -100:
+            self.speed = 6
         else:
-            self.x -= 3
+            self.speed = 3
+
+        if direction[0] > 0 > self.speed:
+            self.speed *= -1
+
+        if direction[0] < 0 < self.speed:
+            self.speed *= -1
+
+        self.x += self.speed
 
         if direction[1] > 0:
             self.y += 3
