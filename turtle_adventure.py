@@ -258,6 +258,7 @@ class RandomWalkEnemy(Enemy):
     """
     Random walking enemy
     """
+
     def __init__(self,
                  game: "TurtleAdventureGame",
                  size: int,
@@ -304,6 +305,7 @@ class ChasingEnemy(Enemy):
     """
     Chasing enemy
     """
+
     def __init__(self,
                  game: "TurtleAdventureGame",
                  size: int,
@@ -359,6 +361,64 @@ class ChasingEnemy(Enemy):
 
     def delete(self) -> None:
         self.canvas.delete(self.__id)
+
+
+class FencingEnemy(Enemy):
+    """
+    This enemy will move around finish point in square shape
+    """
+
+    def __init__(self,
+                 game: "TurtleAdventureGame",
+                 size: int,
+                 color: str):
+        super().__init__(game, size, color)
+        self.__id = None
+        self.x_speed = -3
+        self.y_speed = 0
+
+    def create(self) -> None:
+        self.__id = self.canvas.create_oval(0, 0, 0, 0, fill="blue")
+
+    def update(self) -> None:
+
+        # set border for my enemy
+        if self.x < self.game.home.x - 50:
+            self.x = self.game.home.x - 50
+            self.x_speed = 0
+            self.y_speed = 3
+
+        elif self.x > self.game.home.x + 50:
+            self.x = self.game.home.x + 50
+            self.x_speed = 0
+            self.y_speed = -3
+
+        if self.y < self.game.home.y - 50:
+            self.y = self.game.home.y - 50
+            self.x_speed = -3
+            self.y_speed = 0
+        elif self.y > self.game.home.y + 50:
+            self.y = self.game.home.y + 50
+            self.x_speed = 3
+            self.y_speed = 0
+
+        # enemy walking
+        self.x += self.x_speed
+        self.y += self.y_speed
+
+        if self.hits_player():
+            self.game.game_over_lose()
+
+    def render(self) -> None:
+        self.canvas.coords(self.__id,
+                           self.x - self.size / 2,
+                           self.y - self.size / 2,
+                           self.x + self.size / 2,
+                           self.y + self.size / 2,
+                           )
+
+    def delete(self) -> None:
+        pass
 
 
 class DemoEnemy(Enemy):
@@ -442,8 +502,12 @@ class EnemyGenerator:
         random_walk = RandomWalkEnemy(self.__game, 15, "blue")
         random_walk.x = 400
         random_walk.y = 250
-
         self.game.add_element(random_walk)
+
+        square_walk = FencingEnemy(self.__game, 20, "blue")
+        square_walk.x = self.game.home.x
+        square_walk.y = self.game.home.y - 20
+        self.game.add_element(square_walk)
 
 
 class TurtleAdventureGame(Game):  # pylint: disable=too-many-ancestors
