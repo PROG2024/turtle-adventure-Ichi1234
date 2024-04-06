@@ -102,6 +102,7 @@ class Home(TurtleGameElement):
         self.time_2 = 1
         self.intro = 0
         self.begin = False
+        self.move = False
 
     @property
     def size(self) -> int:
@@ -149,11 +150,11 @@ class Home(TurtleGameElement):
             self.second_phase = True
 
         # animation
-        if self.second_phase and -50 < direction[0] < 50 and -50 < direction[1] < 50:
+        if self.second_phase and -50 < direction[0] < 50 and -50 < direction[1] < 50 and not self.begin:
             self.x_speed = 10
 
         # show second phase text
-        elif self.second_phase and self.x == 0:
+        elif self.second_phase and self.x == 0 and not self.begin:
             self.x_speed = 0
             self.x, self.y = -10, -10
             self.intro = 1
@@ -163,26 +164,44 @@ class Home(TurtleGameElement):
 
         # give time for player to read
         self.time_2 += self.intro
-        if self.time_2 % 50 == 0 and self.second_phase:
+        if self.time_2 % 50 == 0 and not self.begin:
             self.canvas.delete("intro")
-            self.intro = 0
             self.time_2 = 1
             self.begin = True
+            self.intro = 1
             self.summon_enemy()
+
+        if self.begin and self.time_2 % 40 == 0:
+            self.summon_enemy()
+
+        # 10 second pass
+        if self.time_2 % 210 == 0:
+            self.move = True
+
+        if self.move:
+            if direction[0] > 0:
+                self.x += 20
+            elif direction[0] < 0:
+                self.x -= 20
+
+            if direction[1] > 0:
+                self.y += 20
+            elif direction[1] < 0:
+                self.y -= 20
 
     def summon_enemy(self):
 
         color = ["#0B2447", "#19376D", "#576CBC", "#1C6758"]
 
         if self.begin:
-            for _ in range(15):
+            for _ in range(4):
                 random_walk = RandomWalkEnemy(self.game, random.randint(15, 20), random.choice(color))
                 random_walk.x = random.randint(90, 600)
                 random_walk.y = random.randint(0, 500)
                 self.game.add_enemy(random_walk)
 
-            for _ in range(5):
-                teleporter = StalkerEnemy(self.game, 20, "purple")
+            for _ in range(2):
+                teleporter = StalkerEnemy(self.game, 20, "purple", random.randrange(45, 85, 15))
                 teleporter.x = 650
                 teleporter.y = 200
                 self.game.add_enemy(teleporter)
@@ -195,9 +214,10 @@ class Home(TurtleGameElement):
         self.canvas.create_text(self.game.screen_width / 2,
                                 self.game.screen_height / 2 - 40,
                                 text="Second Phase", font=font, fill="black", tags="intro")
+        # actually it's ~ 55 second
         self.canvas.create_text(self.game.screen_width / 2,
                                 self.game.screen_height / 2,
-                                text=f"Victory awaits if you can endure for {self.game.level} minutes!",
+                                text="Victory awaits if you can endure for 10 seconds!",
                                 font=font2, fill="black", tags="intro")
 
     def hits_player(self):
@@ -340,8 +360,6 @@ class Enemy(TurtleGameElement):
         return self.x < 10 or self.x > 790 or self.y < 10 or self.y > 490
 
 
-# TODO
-
 # * Define your enemy classes
 # * Implement all methods required by the GameElement abstract class
 # * Define enemy's update logic in the update() method
@@ -427,7 +445,7 @@ class ChasingEnemy(Enemy):
         if direction[0] > 0 > self.speed:
             self.speed *= -1
 
-        if direction[0] < 0 < self.speed:
+        elif direction[0] < 0 < self.speed:
             self.speed *= -1
 
         self.x += self.speed
@@ -511,18 +529,20 @@ class FencingEnemy(Enemy):
 class StalkerEnemy(Enemy):
     """
     You can run, but you can't hide~~
-    Every 10 second. This enemy will teleport to in front of the player then run toward to player.
+    This enemy will teleport to in front of the player then run toward to player.
     """
 
     def __init__(self,
                  game: "TurtleAdventureGame",
                  size: int,
-                 color: str):
+                 color: str,
+                 timer: int):
         super().__init__(game, size, color)
         self.__id = None
         self.time = 0
         self.speed = 2
         self.teleport = 150
+        self.timer = timer
 
     def create(self) -> None:
         self.__id = self.canvas.create_rectangle(0, 0, 0, 0, outline="black", fill="purple", width=2)
@@ -534,7 +554,8 @@ class StalkerEnemy(Enemy):
         else:
             self.teleport = -85
 
-        if self.time % 40 == 0:
+        # teleport to player
+        if self.time % self.timer == 0:
             self.x = self.game.player.x + self.teleport
             self.y = self.game.player.y
         self.time += 1
@@ -619,7 +640,8 @@ class EnemyGenerator:
         chaser_2.y = 400
         self.game.add_enemy(chaser_2)
 
-        for _ in range(15):
+        # create enemy depend on level difficulty
+        for _ in range((self.level * 10) - 5):
             random_walk = RandomWalkEnemy(self.__game, random.randint(15, 20), random.choice(color))
             random_walk.x = random.randint(90, 600)
             random_walk.y = random.randint(0, 500)
@@ -632,13 +654,11 @@ class EnemyGenerator:
             square_walk.y = self.game.home.y + shield_locate[i][1]
             self.game.add_enemy(square_walk)
 
-        # self.game.delete_enemy(RandomWalkEnemy)
-        # self.game.delete_enemy(FencingEnemy)
-
-        teleporter = StalkerEnemy(self.__game, 20, "purple")
+        teleporter = StalkerEnemy(self.__game, 20, "purple", 40)
         teleporter.x = 650
         teleporter.y = 200
         self.game.add_enemy(teleporter)
+
 
 class TurtleAdventureGame(Game):  # pylint: disable=too-many-ancestors
     """
