@@ -94,6 +94,11 @@ class Home(TurtleGameElement):
         x, y = pos
         self.x = x
         self.y = y
+        self.time = 1
+        self.x_speed = 0
+        self.y_speed = 0
+
+        self.second_phase = False
 
     @property
     def size(self) -> int:
@@ -114,7 +119,59 @@ class Home(TurtleGameElement):
 
     def update(self) -> None:
         # there is nothing to update, unless home is allowed to moved
-        pass
+        player_x = self.game.player.x
+        player_y = self.game.player.y
+        direction = [player_x - self.x, player_y - self.y]
+
+
+        if not self.second_phase and -50 < direction[0] < 50 and -50 < direction[1] < 50:
+            if direction[1] > 0:
+                self.y_speed = -5
+            elif direction[1] < 0:
+                self.y_speed = 5
+
+        if not self.second_phase and self.y_speed != 0:
+            self.y += self.y_speed
+            self.time += 1
+
+        if self.time % 10 == 0:
+            self.y_speed = 0
+            self.x = 400
+            self.y = 250
+            self.second_phase = True
+            for i in self.game.enemies:
+                self.game.delete_enemy(i)
+
+
+        if direction[0] > 0:
+            self.x_speed = abs(self.x_speed)
+
+        elif direction[0] < 0:
+            self.x_speed = -abs(self.x_speed)
+
+        if direction[1] > 0:
+            self.y_speed = abs(self.x_speed)
+
+        elif direction[1] < 0:
+            self.y_speed = -abs(self.x_speed)
+\
+        # if self.hits_player():
+        #     self.game.game_over_lose()
+        #
+        # if self.hit_wall():
+        #     self.time = 0
+        #     self.update_x *= -1
+        #     self.update_y *= -1
+
+    def hits_player(self):
+        """
+        Check whether the enemy is hitting the player
+        """
+        return (
+                (self.x - self.size / 2 < self.game.player.x < self.x + self.size / 2)
+                and
+                (self.y - self.size / 2 < self.game.player.y < self.y + self.size / 2)
+        )
 
     def render(self) -> None:
         self.canvas.coords(self.__id,
@@ -411,7 +468,7 @@ class FencingEnemy(Enemy):
                            )
 
     def delete(self) -> None:
-        pass
+        self.canvas.delete(self.__id)
 
 
 class StalkerEnemy(Enemy):
@@ -472,40 +529,7 @@ class StalkerEnemy(Enemy):
                            )
 
     def delete(self) -> None:
-        pass
-
-
-class DemoEnemy(Enemy):
-    """
-    Demo enemy
-    """
-
-    def __init__(self,
-                 game: "TurtleAdventureGame",
-                 size: int,
-                 color: str):
-        super().__init__(game, size, color)
-        self.__id = None
-
-    def create(self) -> None:
-        self.__id = self.canvas.create_oval(0, 0, 0, 0, fill="red")
-
-    def update(self) -> None:
-        self.x += 1
-        self.y += 1
-        if self.hits_player():
-            self.game.game_over_lose()
-
-    def render(self) -> None:
-        self.canvas.coords(self.__id,
-                           self.x - self.size / 2,
-                           self.y - self.size / 2,
-                           self.x + self.size / 2,
-                           self.y + self.size / 2,
-                           )
-
-    def delete(self) -> None:
-        pass
+        self.canvas.delete(self.__id)
 
 
 # TODO
@@ -548,17 +572,17 @@ class EnemyGenerator:
         Create a new enemy, possibly based on the game level
         """
         color = ["#0B2447", "#19376D", "#576CBC", "#1C6758"]
-        chaser_1 = ChasingEnemy(self.__game, 20, "red")
-        chaser_1.x = 200
-        chaser_1.y = 100
-        self.game.add_enemy(chaser_1)
+        # chaser_1 = ChasingEnemy(self.__game, 20, "red")
+        # chaser_1.x = 200
+        # chaser_1.y = 100
+        # self.game.add_enemy(chaser_1)
+        #
+        # chaser_2 = ChasingEnemy(self.__game, 20, "red")
+        # chaser_2.x = 400
+        # chaser_2.y = 400
+        # self.game.add_enemy(chaser_2)
 
-        chaser_2 = ChasingEnemy(self.__game, 20, "red")
-        chaser_2.x = 400
-        chaser_2.y = 400
-        self.game.add_enemy(chaser_2)
-
-        for _ in range(20):
+        for _ in range(15):
             random_walk = RandomWalkEnemy(self.__game, random.randint(15, 20), random.choice(color))
             random_walk.x = random.randint(90, 600)
             random_walk.y = random.randint(0, 500)
@@ -571,10 +595,13 @@ class EnemyGenerator:
             square_walk.y = self.game.home.y + shield_locate[i][1]
             self.game.add_enemy(square_walk)
 
-        teleporter = StalkerEnemy(self.__game, 20, "purple")
-        teleporter.x = 650
-        teleporter.y = 200
-        self.game.add_enemy(teleporter)
+        for i in self.game.enemies:
+            if isinstance(i, RandomWalkEnemy):
+                self.game.delete_enemy(i)
+        # teleporter = StalkerEnemy(self.__game, 20, "purple")
+        # teleporter.x = 650
+        # teleporter.y = 200
+        # self.game.add_enemy(teleporter)
 
 
 class TurtleAdventureGame(Game):  # pylint: disable=too-many-ancestors
@@ -619,6 +646,10 @@ class TurtleAdventureGame(Game):  # pylint: disable=too-many-ancestors
         """
         self.enemies.append(enemy)
         self.add_element(enemy)
+
+    def delete_enemy(self, enemy: Enemy):
+        self.enemies.remove(enemy)
+        self.delete_element(enemy)
 
     def game_over_win(self) -> None:
         """
