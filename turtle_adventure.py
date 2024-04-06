@@ -590,7 +590,6 @@ class StalkerEnemy(Enemy):
         self.canvas.delete(self.__id)
 
 
-# TODO
 # Complete the EnemyGenerator class by inserting code to generate enemies
 # based on the given game level; call TurtleAdventureGame's add_enemy() method
 # to add enemies to the game at certain points in time.
