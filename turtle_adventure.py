@@ -99,6 +99,8 @@ class Home(TurtleGameElement):
         self.y_speed = 0
 
         self.second_phase = False
+        self.time_2 = 1
+        self.intro = 1
 
     @property
     def size(self) -> int:
@@ -118,50 +120,63 @@ class Home(TurtleGameElement):
         self.canvas.delete(self.__id)
 
     def update(self) -> None:
-        # there is nothing to update, unless home is allowed to moved
+        # there is nothing to update, unless home is allowed to moved yes I known.
         player_x = self.game.player.x
         player_y = self.game.player.y
         direction = [player_x - self.x, player_y - self.y]
 
-
+        # check the direction which way player approach
         if not self.second_phase and -50 < direction[0] < 50 and -50 < direction[1] < 50:
             if direction[1] > 0:
                 self.y_speed = -5
             elif direction[1] < 0:
                 self.y_speed = 5
-
+        # if player near in first phase surprise him
         if not self.second_phase and self.y_speed != 0:
             self.y += self.y_speed
             self.time += 1
-
+        # animation begin second phase
         if self.time % 10 == 0:
             self.y_speed = 0
             self.x = 400
             self.y = 250
-            self.second_phase = True
+            self.time = 1
             for i in self.game.enemies:
                 self.game.delete_enemy(i)
+            self.second_phase = True
+        # animation
+        if self.second_phase and -50 < direction[0] < 50 and -50 < direction[1] < 50:
+            self.x_speed = 10
+
+        # show second phase text
+        elif self.second_phase and self.x == 0:
+            self.x_speed = 0
+            self.x, self.y = -10, -10
+            self.intro = 1
+            self.second_phase_text()
+
+        self.x -= self.x_speed
+
+        # give time for player to read
+        self.time_2 += self.intro
+        if self.time_2 % 50 == 0:
+            self.canvas.delete("intro")
+            self.intro = 0
+            self.time_2 = 1
+
+    def second_phase_text(self):
+
+        font = ("Arial", 36, "bold")
+        font2 = ("Arial", 20, "bold")
+        self.canvas.create_text(self.game.screen_width / 2,
+                                self.game.screen_height / 2 - 40,
+                                text="Second Phase", font=font, fill="black", tags="intro")
+        self.canvas.create_text(self.game.screen_width / 2,
+                                self.game.screen_height / 2,
+                                text=f"Victory awaits if you can endure for {self.game.level} minutes!",
+                                font=font2, fill="black", tags="intro")
 
 
-        if direction[0] > 0:
-            self.x_speed = abs(self.x_speed)
-
-        elif direction[0] < 0:
-            self.x_speed = -abs(self.x_speed)
-
-        if direction[1] > 0:
-            self.y_speed = abs(self.x_speed)
-
-        elif direction[1] < 0:
-            self.y_speed = -abs(self.x_speed)
-\
-        # if self.hits_player():
-        #     self.game.game_over_lose()
-        #
-        # if self.hit_wall():
-        #     self.time = 0
-        #     self.update_x *= -1
-        #     self.update_y *= -1
 
     def hits_player(self):
         """
@@ -227,7 +242,7 @@ class Player(TurtleGameElement):
 
     def update(self) -> None:
         # check if player has arrived home
-        if self.game.home.contains(self.x, self.y):
+        if self.game.home.contains(self.x, self.y) and self.game.home.second_phase:
             self.game.game_over_win()
         turtle = self.__turtle
         waypoint = self.game.waypoint
