@@ -595,9 +595,9 @@ class EnemyGenerator:
             square_walk.y = self.game.home.y + shield_locate[i][1]
             self.game.add_enemy(square_walk)
 
-        for i in self.game.enemies:
-            if isinstance(i, RandomWalkEnemy):
-                self.game.delete_enemy(i)
+        self.game.delete_enemy(RandomWalkEnemy)
+        self.game.delete_enemy(FencingEnemy)
+
         # teleporter = StalkerEnemy(self.__game, 20, "purple")
         # teleporter.x = 650
         # teleporter.y = 200
@@ -648,8 +648,10 @@ class TurtleAdventureGame(Game):  # pylint: disable=too-many-ancestors
         self.add_element(enemy)
 
     def delete_enemy(self, enemy: Enemy):
-        self.enemies.remove(enemy)
-        self.delete_element(enemy)
+        """delete enemy"""
+        for remove in [i for i in self.enemies if isinstance(i, enemy)]:
+            self.delete_element(remove)
+            self.enemies.remove(remove)
 
     def game_over_win(self) -> None:
         """
