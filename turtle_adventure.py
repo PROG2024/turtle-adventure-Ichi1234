@@ -95,14 +95,10 @@ class Home(TurtleGameElement):
         self.x = x
         self.y = y
         self.time = 1
-        self.x_speed = 0
-        self.y_speed = 0
+        self.x_speed, self.y_speed = 0, 0
 
-        self.second_phase = False
-        self.time_2 = 1
         self.intro = 0
-        self.begin = False
-        self.move = False
+        self.begin, self.move, self.second_phase = False, False, False
 
     @property
     def size(self) -> int:
@@ -128,28 +124,28 @@ class Home(TurtleGameElement):
         direction = [player_x - self.x, player_y - self.y]
 
         # check the direction which way player approach
-        if not self.second_phase and -50 < direction[0] < 50 and -50 < direction[1] < 50:
+        if not self.second_phase and -60 < direction[0] < 60 and -55 < direction[1] < 55:
             if direction[1] > 0:
-                self.y_speed = -5
+                self.y_speed = -8
             elif direction[1] < 0:
-                self.y_speed = 5
+                self.y_speed = 8
         # if player near in first phase surprise him
         if not self.second_phase and self.y_speed != 0:
             self.y += self.y_speed
-            self.time += 1
+            self.intro = 1
+            self.time += self.intro
         # animation begin second phase
-        if self.time % 10 == 0:
+        if self.time % 40 == 0 and not self.second_phase:
             self.y_speed = 0
-            self.x = 400
-            self.y = 250
-            self.time = 1
+            self.x, self.y = 400, 250
+            self.time, self.intro = 1, 0
 
             for delete_enemy in [FencingEnemy, RandomWalkEnemy, StalkerEnemy, ChasingEnemy]:
-                self.game.delete_enemy(delete_enemy)
+                self.game.delete_all_enemy(delete_enemy)
 
             self.second_phase = True
 
-        # animation
+        # running when user is near animation
         if self.second_phase and -50 < direction[0] < 50 and -50 < direction[1] < 50 and not self.begin:
             self.x_speed = 10
 
@@ -163,22 +159,22 @@ class Home(TurtleGameElement):
         self.x -= self.x_speed
 
         # give time for player to read
-        self.time_2 += self.intro
-        if self.time_2 % 50 == 0 and not self.begin:
+        self.time += self.intro
+        if self.time % 60 == 0 and not self.begin:
             self.canvas.delete("intro")
-            self.time_2 = 1
+            self.time = 1
             self.begin = True
-            self.intro = 1
             self.summon_enemy()
 
-        if self.begin and self.time_2 % 40 == 0:
+        if self.begin and self.time % 40 == 0:
             self.summon_enemy()
 
         # 10 second pass
-        if self.time_2 % 210 == 0:
+        if self.time % 210 == 0:
             self.move = True
 
         if self.move:
+            # move to player when 10 second has passed
             if direction[0] > 0:
                 self.x += 20
             elif direction[0] < 0:
@@ -190,6 +186,7 @@ class Home(TurtleGameElement):
                 self.y -= 20
 
     def summon_enemy(self):
+        """This code use for add enemy overtime during phase 2"""
 
         color = ["#0B2447", "#19376D", "#576CBC", "#1C6758"]
 
@@ -565,7 +562,7 @@ class StalkerEnemy(Enemy):
         if direction[0] > 0 > self.speed:
             self.speed *= -1
 
-        if direction[0] < 0 < self.speed:
+        elif direction[0] < 0 < self.speed:
             self.speed *= -1
 
         self.x += self.speed
@@ -629,14 +626,15 @@ class EnemyGenerator:
         Create a new enemy, possibly based on the game level
         """
         color = ["#0B2447", "#19376D", "#576CBC", "#1C6758"]
+
         chaser_1 = ChasingEnemy(self.__game, 20, "red")
-        chaser_1.x = 200
-        chaser_1.y = 100
+        chaser_1.x, chaser_1.y = 200, 100
+
         self.game.add_enemy(chaser_1)
 
         chaser_2 = ChasingEnemy(self.__game, 20, "red")
-        chaser_2.x = 400
-        chaser_2.y = 400
+        chaser_2.x, chaser_2.y = 400, 400
+
         self.game.add_enemy(chaser_2)
 
         # create enemy depend on level difficulty
@@ -654,8 +652,8 @@ class EnemyGenerator:
             self.game.add_enemy(square_walk)
 
         teleporter = StalkerEnemy(self.__game, 20, "purple", 40)
-        teleporter.x = 650
-        teleporter.y = 200
+        teleporter.x, teleporter.y = 650, 200
+
         self.game.add_enemy(teleporter)
 
 
@@ -702,8 +700,8 @@ class TurtleAdventureGame(Game):  # pylint: disable=too-many-ancestors
         self.enemies.append(enemy)
         self.add_element(enemy)
 
-    def delete_enemy(self, enemy: Enemy):
-        """delete enemy"""
+    def delete_all_enemy(self, enemy: Enemy):
+        """delete all of the enemy of that specific type"""
         for remove in [i for i in self.enemies if isinstance(i, enemy)]:
             self.delete_element(remove)
             self.enemies.remove(remove)
